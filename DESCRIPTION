@@ -1,0 +1,25 @@
+Package: csutil
+Title: Utility Functions for China Macro Time Series
+Version: 0.0.0.9000
+Author: zemw <zemw123@gmail.com>
+Maintainer: zemw <zemw123@gmail.com>
+Description: A collection of utility function to work with China's macro time series.
+License: AGPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    dplyr,
+    jsonlite,
+    lubridate,
+    magrittr,
+    purrr,
+    re2,
+    readr,
+    rlang,
+    stringr,
+    tibble,
+    tidyr,
+    zoo
+Depends: 
+    R (>= 2.10)
