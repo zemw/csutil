@@ -4,10 +4,12 @@
 \alias{grabTS}
 \title{Compile Time Series Data}
 \usage{
-grabTS(df, out = c("df", "ts", "zoo"))
+grabTS(df, freq = c("mixed", "y", "q", "m"), out = c("df", "ts", "zoo"))
 }
 \arguments{
 \item{df}{the dataframe returned from \code{\link[=parse2DF]{parse2DF()}}}
+
+\item{freq}{only grab a certain frequency}
 
 \item{out}{the output object type}
 }

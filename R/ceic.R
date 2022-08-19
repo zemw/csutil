@@ -74,6 +74,7 @@ parse2DF = function(path, jsonData=TRUE) {
 #' series are regular.
 #'
 #' @param df the dataframe returned from [parse2DF()]
+#' @param freq only grab a certain frequency
 #' @param out the output object type
 #'
 #' @return an object of the specified type
@@ -85,7 +86,14 @@ parse2DF = function(path, jsonData=TRUE) {
 #' df_q = dplyr::filter(frequency == "Quarterly")
 #' df_q.ts = grabTS(df_q, out = "ts")
 #' }
-grabTS = function(df, out=c("df", "ts", "zoo")) {
+grabTS = function(df, freq=c("mixed", "y", "q", "m"), out=c("df", "ts", "zoo")) {
+  freq = match.arg(freq)
+  df = switch (freq,
+    "y" = df[df$frequency == "Yearly", ],
+    "q" = df[df$frequency == "Quarterly", ],
+    "m" = df[df$frequency == "Monthly", ],
+    df
+  )
   code = df[['srCode']]
   freqs = df[['frequency']]
   series = df[['data']]
