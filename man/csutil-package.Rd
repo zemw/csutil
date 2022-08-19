@@ -8,4 +8,12 @@
 \description{
 A collection of utility function to work with China's macro time series.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/zemw/csutil}
+  \item Report bugs at \url{https://github.com/zemw/csutil/issues}
+}
+
+}
 \keyword{internal}

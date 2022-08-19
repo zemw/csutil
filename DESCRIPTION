@@ -9,7 +9,9 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Imports: 
+    bHP,
     dplyr,
+    imputeTS,
     jsonlite,
     lubridate,
     magrittr,
@@ -17,6 +19,8 @@ Imports:
     re2,
     readr,
     rlang,
+    seasonal,
+    slider,
     stringr,
     tibble,
     tidyr,
