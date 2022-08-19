@@ -47,7 +47,7 @@ trans = function(
     hpFilter = c("none", "trend", "cycle"),
     chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm")) {
 
-  stopifnot(is.ts(x))
+  stopifnot(stats::is.ts(x))
 
   # unit multiplier
   if(rlang::is_scalar_double(unit)) {
@@ -56,33 +56,33 @@ trans = function(
 
   # change frequency
   freq = match.arg(freq)
-  nfreq = switch (freq, "y" = 1, "q" = 4, "m" = 12, frequency(x))
-  if (nfreq > frequency(x)) {
+  nfreq = switch (freq, "y" = 1, "q" = 4, "m" = 12, stats::frequency(x))
+  if (nfreq > stats::frequency(x)) {
     stop("Cannot aggregate to higher frequency.")
   }
-  if (nfreq < frequency(x)) {
+  if (nfreq < stats::frequency(x)) {
     agg = match.arg(agg)
     fun = function(.x, method = agg) {
       switch (
         method,
         "avg" = mean(.x),
         "sum" = sum(.x),
-        "last" = tail(.x, n = 1)
+        "last" = utils::tail(.x, n = 1)
       )
     }
-    x = aggregate(x, nfreq, fun)
+    x = stats::aggregate(x, nfreq, fun)
   }
 
   # output series
   y = x
 
   # disaggregate YTD series
-  if (isTRUE(disYTD) && frequency(x) %in% c(4,12)) {
+  if (isTRUE(disYTD) && nfreq %in% c(4,12)) {
     for (i in 1:length(x)) {
-      if (cycle(x)[i] == 1)
+      if (stats::cycle(x)[i] == 1)
         y[i] = x[i]
       # avoid possible double counting in Jan/Feb
-      else if (cycle(x)[i] == 2 && i > 1 && identical(x[i], x[i-1]))
+      else if (stats::cycle(x)[i] == 2 && i > 1 && identical(x[i], x[i-1]))
         y[(i-1):i] = NA_real_
       else if (i > 1)
         y[i] = x[i] - x[i - 1]
@@ -107,7 +107,7 @@ trans = function(
     if(NROW(naReg) != NROW(y)) {
       stop("Regressors have different length.")
     }
-    fit = predict(lm(y ~ naReg), newdata = naReg)
+    fit = stats::predict(stats::lm(y ~ naReg), newdata = naReg)
     for (i in 1:length(y)) {
       if (is.na(y[i])) y[i] = fit[i]
     }
@@ -118,17 +118,17 @@ trans = function(
     if (length(naYoY) != length(y)) {
       stop("YoY series has different length.")
     }
-    k = frequency(y)
+    # nfreq = frequency(y)
     # filling forward
-    for (i in (k + 1):length(y)) {
-      if (is.na(y[i]) && !is.na(y[i - k]) && !is.na(naYoY[i])) {
-        y[i] = y[i - k] * (1 + naYoY[i] / 100)
+    for (i in (nfreq + 1):length(y)) {
+      if (is.na(y[i]) && !is.na(y[i - nfreq]) && !is.na(naYoY[i])) {
+        y[i] = y[i - nfreq] * (1 + naYoY[i] / 100)
       }
     }
     # filling backward
-    for (i in (length(y) - k):1) {
-      if (is.na(x[y]) && !is.na(y[i + k]) && !is.na(naYoY[i + k])) {
-        y[i] = y[i + k] / (1 + naYoY[i + k] / 100)
+    for (i in (length(y) - nfreq):1) {
+      if (is.na(x[y]) && !is.na(y[i + nfreq]) && !is.na(naYoY[i + nfreq])) {
+        y[i] = y[i + nfreq] / (1 + naYoY[i + nfreq] / 100)
       }
     }
   }
@@ -162,10 +162,10 @@ trans = function(
     "log" = log(y),
     "diff" = diff(y),
     "ld" = diff(log(y)),
-    "pct" = 100*(y/lag(y, -1)-1) %>% round(digits = 2),
-    "yoy" = 100*(y/lag(y, -nfreq)-1) %>% round(digits = 2),
+    "pct" = 100*(y/stats::lag(y, -1)-1) %>% round(digits = 2),
+    "yoy" = 100*(y/stats::lag(y, -nfreq)-1) %>% round(digits = 2),
     "ttm" = zoo::rollsum(y, nfreq, align = "right"),
-    "idx" = y / na.omit(y)[1]
+    "idx" = y / stats::na.omit(y)[1]
   )
   return(z)
 }
