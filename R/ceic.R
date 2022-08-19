@@ -83,7 +83,7 @@ parse2DF = function(path, jsonData=TRUE) {
 #' \dontrun{
 #' df = parse2DF("data-raw/testseries.m")
 #' df_q = dplyr::filter(frequency == "Quarterly")
-#' df_q.ts = grabTS(out = "ts")
+#' df_q.ts = grabTS(df_q, out = "ts")
 #' }
 grabTS = function(df, out=c("df", "ts", "zoo")) {
   code = df[['srCode']]

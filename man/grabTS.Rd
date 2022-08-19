@@ -29,6 +29,6 @@ series are regular.
 \dontrun{
 df = parse2DF("data-raw/testseries.m")
 df_q = dplyr::filter(frequency == "Quarterly")
-df_q.ts = grabTS(out = "ts")
+df_q.ts = grabTS(df_q, out = "ts")
 }
 }
