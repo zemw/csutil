@@ -1,12 +1,20 @@
-
-
 #' Time Series Transformation
+#'
+#' @param x time series object
+#' @param ... arguments used to transform each single time series
+#'
+#' @rdname trans
+#' @export
+trans = function(x, ...) {
+  UseMethod("trans")
+}
+
+#' Transform Single Time Series
 #'
 #' Performs time series transformation including aggregation, missing-value
 #' imputation, seasonal adjustment and so on. Transformations are executed
 #' sequentially as ordered in the argument list.
 #'
-#' @param x a single `ts` vector.
 #' @param freq frequency of the output series. If the intended frequency is
 #' lower than the original one, aggregating method will apply. Switching to
 #' a higher frequency is not allowed.
@@ -30,11 +38,12 @@
 #' `idx` indexify the time series with the first non-NA observation set to 1;
 #' `ttm` computes the rolling sum of past 1 year.
 #'
-#' @return the transformed `ts` series. Output series may differ in length
+#' @return the transformed series. Output series may differ in length
 #' depending on the transformation.
 #'
+#' @rdname trans
 #' @export
-trans = function(
+trans.ts = function(
     x,
     freq = c("asis", "y", "q", "m"),
     agg = c("avg", "sum", "last"),
@@ -168,4 +177,20 @@ trans = function(
     "idx" = y / stats::na.omit(y)[1]
   )
   return(z)
+}
+
+#' Transform Multiple Time Series
+#'
+#' For multiple time series input, the same transformation will be applied
+#' for each series.
+#'
+#' @rdname trans
+#' @export
+trans.mts = function(x, ...) {
+  stopifnot(is.mts(x))
+  as.list(x) %>%
+    purrr::map(function(.) {
+      do.call(trans.ts, args = c(list(x = .), list(...)))
+    }) %>%
+    do.call(cbind, args = .)
 }

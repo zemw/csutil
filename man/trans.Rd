@@ -2,9 +2,13 @@
 % Please edit documentation in R/trans.R
 \name{trans}
 \alias{trans}
+\alias{trans.ts}
+\alias{trans.mts}
 \title{Time Series Transformation}
 \usage{
-trans(
+trans(x, ...)
+
+\method{trans}{ts}(
   x,
   freq = c("asis", "y", "q", "m"),
   agg = c("avg", "sum", "last"),
@@ -17,9 +21,13 @@ trans(
   hpFilter = c("none", "trend", "cycle"),
   chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm")
 )
+
+\method{trans}{mts}(x, ...)
 }
 \arguments{
-\item{x}{a single \code{ts} vector.}
+\item{x}{time series object}
+
+\item{...}{arguments used to transform each single time series}
 
 \item{freq}{frequency of the output series. If the intended frequency is
 lower than the original one, aggregating method will apply. Switching to
@@ -54,11 +62,14 @@ or a matrix. Must be the same length as the input time series.}
 \code{ttm} computes the rolling sum of past 1 year.}
 }
 \value{
-the transformed \code{ts} series. Output series may differ in length
+the transformed series. Output series may differ in length
 depending on the transformation.
 }
 \description{
 Performs time series transformation including aggregation, missing-value
 imputation, seasonal adjustment and so on. Transformations are executed
 sequentially as ordered in the argument list.
+
+For multiple time series input, the same transformation will be applied
+for each series.
 }
