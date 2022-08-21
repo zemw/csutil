@@ -31,8 +31,8 @@ trans(x, ...)
 \item{...}{arguments used to transform each single time series}
 
 \item{freq}{frequency of the output series. If the intended frequency is
-lower than the original one, aggregating method will apply. Switching to
-a higher frequency is not allowed.}
+lower than the original one, aggregating method will apply. Transforming
+to higher frequencies will generate NAs in the output series.}
 
 \item{agg}{aggregating method for frequency transformation.}
 

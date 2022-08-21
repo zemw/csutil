@@ -16,8 +16,8 @@ trans = function(x, ...) {
 #' sequentially as ordered in the argument list.
 #'
 #' @param freq frequency of the output series. If the intended frequency is
-#' lower than the original one, aggregating method will apply. Switching to
-#' a higher frequency is not allowed.
+#' lower than the original one, aggregating method will apply. Transforming
+#' to higher frequencies will generate NAs in the output series.
 #' @param agg aggregating method for frequency transformation.
 #' @param unit a single number to scale up or down the values.
 #' @param disYTD set to `TRUE` for YTD series to convert it back to monthly
@@ -68,7 +68,10 @@ trans.ts = function(
   freq = match.arg(freq)
   nfreq = switch (freq, "y" = 1, "q" = 4, "m" = 12, stats::frequency(x))
   if (nfreq > stats::frequency(x)) {
-    stop("Cannot aggregate to higher frequency.")
+    # stop("Cannot aggregate to higher frequency.")
+    tmp = ts(NA, start = time(x)[1], end = time(x)[length(x)], nfreq)
+    suppressWarnings(tmp <- zoo::merge.zoo(tmp, x))
+    x = as.ts(tmp[,2])
   }
   if (nfreq < stats::frequency(x)) {
     agg = match.arg(agg)
