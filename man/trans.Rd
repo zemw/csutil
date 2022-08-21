@@ -19,7 +19,8 @@ trans(x, ...)
   naYoY = numeric(0),
   seasAdj = c("none", "x11", "seats"),
   hpFilter = c("none", "trend", "cycle"),
-  chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm")
+  chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm"),
+  ...
 )
 
 \method{trans}{mts}(x, ...)

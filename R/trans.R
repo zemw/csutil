@@ -54,7 +54,8 @@ trans.ts = function(
     naYoY = numeric(0),
     seasAdj = c("none", "x11", "seats"),
     hpFilter = c("none", "trend", "cycle"),
-    chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm")) {
+    chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm"),
+    ...) {
 
   stopifnot(stats::is.ts(x))
 
@@ -188,9 +189,10 @@ trans.ts = function(
 #' @export
 trans.mts = function(x, ...) {
   stopifnot(is.mts(x))
+  . = NULL # silence CMD Check
   as.list(x) %>%
-    purrr::map(function(.) {
-      do.call(trans.ts, args = c(list(x = .), list(...)))
+    purrr::map(function(.x) {
+      do.call(trans.ts, args = c(list(x = .x), list(...)))
     }) %>%
     do.call(cbind, args = .)
 }
