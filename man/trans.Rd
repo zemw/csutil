@@ -23,7 +23,7 @@ trans(x, ...)
   ...
 )
 
-\method{trans}{mts}(x, ...)
+\method{trans}{mts}(x, ..., colNames = NULL)
 }
 \arguments{
 \item{x}{time series object}
@@ -61,6 +61,9 @@ or a matrix. Must be the same length as the input time series.}
 \code{yoy} computes the percentage change from a year ago;
 \code{idx} indexify the time series with the first non-NA observation set to 1;
 \code{ttm} computes the rolling sum of past 1 year.}
+
+\item{colNames}{rename the columns. Must be the same length as the number
+of columns of the input series.}
 }
 \value{
 the transformed series. Output series may differ in length

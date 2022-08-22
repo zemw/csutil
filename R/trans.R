@@ -188,14 +188,19 @@ trans.ts = function(
 #' For multiple time series input, the same transformation will be applied
 #' for each series.
 #'
+#' @param colNames rename the columns. Must be the same length as the number
+#' of columns of the input series.
+#'
 #' @rdname trans
 #' @export
-trans.mts = function(x, ...) {
+trans.mts = function(x, ..., colNames = NULL) {
   stopifnot(is.mts(x))
   . = NULL # silence CMD Check
-  as.list(x) %>%
+  y = as.list(x) %>%
     purrr::map(function(.x) {
       do.call(trans.ts, args = list(x = .x, ...))
     }) %>%
     do.call(cbind, args = .)
+  if (!is.null(colNames)) colnames(y) = colNames
+  return(y)
 }
