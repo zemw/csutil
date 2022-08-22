@@ -195,7 +195,7 @@ trans.mts = function(x, ...) {
   . = NULL # silence CMD Check
   as.list(x) %>%
     purrr::map(function(.x) {
-      do.call(trans.ts, args = c(list(x = .x), list(...)))
+      do.call(trans.ts, args = list(x = .x, ...))
     }) %>%
     do.call(cbind, args = .)
 }
