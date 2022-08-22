@@ -1,11 +1,11 @@
 #' Dual-Axis Plot
 #'
-#' A wrapper over [plotrix::twoord.plot()] to plot two time series
+#' A wrapper over [plotrix::twoord.plot] to plot two time series
 #' on different axis.
 #'
 #' @param y1 `ts` series (left)
 #' @param y2 `ts` series (right)
-#' @param ... parameters of [plotrix::twoord.plot()]
+#' @param ... parameters of [plotrix::twoord.plot]
 #'
 #' @return nil
 #' @export
@@ -22,4 +22,18 @@ dualplot = function(y1, y2, ...) {
   args = c(args, list(...))
 
   do.call(twoord.plot, args)
+}
+
+
+#' Plot Multiple Time Series
+#'
+#' A wrapper over [zoo::plot.zoo] to plot multiple time series.
+#'
+#' @param y an `mts` object
+#' @param ... parameters of [zoo::plot.zoo]
+#' @seealso [zoo::plot.zoo]
+#' @export
+multiplot = function(y, ...) {
+  stopifnot(is.mts(y))
+  plot.zoo(y, ...)
 }
