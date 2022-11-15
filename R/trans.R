@@ -38,9 +38,10 @@ trans = function(x, ...) {
 #' `idx` indexify the time series with the first non-NA observation set to 1;
 #' `ttm` computes the rolling sum of past 1 year.
 #'
-#' @return the transformed series. Output series may differ in length
-#' depending on the transformation.
+#' @return the transformed series. Output series are returned in the same
+#' length as the input series if no frequency change applied.
 #'
+#' @import stats
 #' @rdname trans
 #' @export
 trans.ts = function(
@@ -52,12 +53,12 @@ trans.ts = function(
     naFill = c("none", "interp", "locf", "ma", "kalman"),
     naReg = numeric(0),
     naYoY = numeric(0),
-    seasAdj = c("none", "x11", "seats"),
+    seasAdj = c("none", "x11", "x13"),
     hpFilter = c("none", "trend", "cycle"),
     chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm"),
     ...) {
 
-  stopifnot(stats::is.ts(x))
+  stopifnot(is.ts(x))
 
   # unit multiplier
   if(rlang::is_scalar_double(unit)) {
@@ -66,14 +67,14 @@ trans.ts = function(
 
   # change frequency
   freq = match.arg(freq)
-  nfreq = switch (freq, "y" = 1, "q" = 4, "m" = 12, stats::frequency(x))
-  if (nfreq > stats::frequency(x)) {
+  nfreq = switch (freq, "y" = 1, "q" = 4, "m" = 12, frequency(x))
+  if (nfreq > frequency(x)) {
     # stop("Cannot aggregate to higher frequency.")
     tmp = ts(NA, start = time(x)[1], end = time(x)[length(x)], nfreq)
     suppressWarnings(tmp <- zoo::merge.zoo(tmp, x))
     x = as.ts(tmp[,2])
   }
-  if (nfreq < stats::frequency(x)) {
+  if (nfreq < frequency(x)) {
     agg = match.arg(agg)
     fun = function(.x, method = agg) {
       switch (
@@ -83,7 +84,7 @@ trans.ts = function(
         "last" = utils::tail(.x, n = 1)
       )
     }
-    x = stats::aggregate(x, nfreq, fun)
+    x = aggregate(x, nfreq, fun)
   }
 
   # output series
@@ -92,10 +93,10 @@ trans.ts = function(
   # disaggregate YTD series
   if (isTRUE(disYTD) && nfreq %in% c(4,12)) {
     for (i in 1:length(x)) {
-      if (stats::cycle(x)[i] == 1)
-        y[i] = x[i]
+      if (cycle(x)[i] == 1)
+        y[i] = ifelse(i==length(x), NA_real_, x[i])
       # avoid possible double counting in Jan/Feb
-      else if (stats::cycle(x)[i] == 2 && i > 1 && identical(x[i], x[i-1]))
+      else if (cycle(x)[i] == 2 && i > 1 && identical(x[i], x[i-1]))
         y[(i-1):i] = NA_real_
       else if (i > 1)
         y[i] = x[i] - x[i - 1]
@@ -104,23 +105,12 @@ trans.ts = function(
     }
   }
 
-  # impute missing values
-  naFill = match.arg(naFill)
-  y = switch(
-    naFill,
-    "interp" = imputeTS::na_interpolation(y),
-    "kalman" = imputeTS::na_kalman(y),
-    "locf" = imputeTS::na_locf(y),
-    "ma" = imputeTS::na_ma(y),
-    y
-  )
-
   # impute missing values by regression
   if (is.numeric(naReg) && length(naReg) > 0) {
     if(NROW(naReg) != NROW(y)) {
       stop("Regressors have different length.")
     }
-    fit = stats::predict(stats::lm(y ~ naReg), newdata = naReg)
+    fit = predict(lm(y ~ naReg), newdata = naReg)
     for (i in 1:length(y)) {
       if (is.na(y[i])) y[i] = fit[i]
     }
@@ -146,14 +136,36 @@ trans.ts = function(
     }
   }
 
+  ## skip leading and trailing NAs for imputation and seasAdj
+  x = y  # back up series before trimming
+  y = zoo::na.trim(y)
+
+  # impute missing values
+  naFill = match.arg(naFill)
+  y = switch(
+    naFill,
+    "interp" = imputeTS::na_interpolation(y),
+    "kalman" = imputeTS::na_kalman(y),
+    "locf" = imputeTS::na_locf(y),
+    "ma" = imputeTS::na_ma(y),
+    y
+  )
+
   # seasonal adjustment
   seasAdj = match.arg(seasAdj)
-  y = switch(
-    seasAdj,
-    "x11" = seasonal::final(seasonal::seas(y, x11=list())),
-    "seats" = seasonal::final(seasonal::seas(y)),
-    "none" = y
+  if (seasAdj != "none") {
+    na_pos = is.na(y) # replace NA with outliers
+    tmp = replace(y, na_pos, 99999)
+    # Chinese Lunar New Year regressors
+    xreg = cbind(
+      seasonal::genhol(seasonal::cny, start = -7, end = -1, center = "calendar"),
+      seasonal::genhol(seasonal::cny, start = 0, end = 7, center = "calendar")
     )
+    seasObj = seasonal::seas(tmp, xreg, regression.usertype = "holiday")
+    if (seasAdj == "x11") update(seasObj, x11 = "")
+    y = seasonal::final(seasObj) # seasonally adjusted series
+    y[na_pos] <- NA
+  }
 
   # boosted HP filtering
   hpFilter = match.arg(hpFilter)
@@ -170,17 +182,24 @@ trans.ts = function(
 
   # output transform
   chg = match.arg(chg)
-  z = switch (chg,
+  y = switch (chg,
     "asis" = y,
     "log" = log(y),
-    "diff" = diff(y),
+    "diff" =diff(y),
     "ld" = diff(log(y)),
-    "pct" = 100*(y/stats::lag(y, -1)-1) %>% round(digits = 2),
-    "yoy" = 100*(y/stats::lag(y, -nfreq)-1) %>% round(digits = 2),
+    "pct" = 100*(y/lag(y, -1)-1),
+    "yoy" = 100*(y/lag(y, -nfreq)-1),
     "ttm" = zoo::rollsum(y, nfreq, align = "right"),
-    "idx" = y / stats::na.omit(y)[1]
+    "idx" = y / na.omit(y)[1]
   )
-  return(z)
+
+  # recover leading and trailing NAs
+  # make sure y maintain the same tsp
+  if (length(y) != length(x)) {
+    tmp = zoo::merge.zoo(y, x)
+    y = as.ts(tmp[,1])
+  }
+  return(y)
 }
 
 #' Transform Multiple Time Series

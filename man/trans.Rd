@@ -17,7 +17,7 @@ trans(x, ...)
   naFill = c("none", "interp", "locf", "ma", "kalman"),
   naReg = numeric(0),
   naYoY = numeric(0),
-  seasAdj = c("none", "x11", "seats"),
+  seasAdj = c("none", "x11", "x13"),
   hpFilter = c("none", "trend", "cycle"),
   chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm"),
   ...
@@ -66,8 +66,8 @@ or a matrix. Must be the same length as the input time series.}
 of columns of the input series.}
 }
 \value{
-the transformed series. Output series may differ in length
-depending on the transformation.
+the transformed series. Output series are returned in the same
+length as the input series if no frequency change applied.
 }
 \description{
 Performs time series transformation including aggregation, missing-value

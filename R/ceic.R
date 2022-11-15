@@ -130,6 +130,6 @@ grabTS = function(df, freq=c("mixed", "y", "q", "m"), out=c("df", "ts", "zoo")) 
 #' @export
 parse2TS = function(path, out=c("df", "ts", "zoo")) {
   df = parse2DF(path)
-  grabTS(df, out)
+  grabTS(df, out=out)
 }
 
