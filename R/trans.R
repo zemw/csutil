@@ -20,18 +20,24 @@ trans = function(x, ...) {
 #' to higher frequencies will generate NAs in the output series.
 #' @param agg aggregating method for frequency transformation.
 #' @param unit a single number to scale up or down the values.
-#' @param disYTD set to `TRUE` for YTD series to convert it back to monthly
+#' @param YTD set to `TRUE` for YTD series to convert it back to monthly
 #' or quarterly level series.
-#' @param naFill methods to impute missing values (see package [`imputeTS`])
-#' @param naReg impute missing values by a set of regressors. Can be a vector
+#' @param na_impute methods to impute missing values (see package [`imputeTS`])
+#' @param na_predict predicts missing values by regression.
+#' `yoy` predicts missing levels by YoY growth rates;
+#' `reg` predicts missing values by linear regression;
+#' `lnreg` runs linear regression on log levels.
+#' @param xreg regressors to predict missing values. Can be a vector
 #' or a matrix. Must be the same length as the input time series.
-#' @param naYoY impute missing values by YoY growth rates. Must be a vector
-#' (in percentage) with the same length as the input time series.
-#' @param seasAdj seasonal adjusting methods (see package [`seasonal`])
-#' @param hpFilter applying (boosted) HP filter (see package [`bHP`])
+#' If `na_predict` is specified as `yoy`, must be a vector of growth rates
+#' in percentage.
+#' @param seas seasonal adjusting methods (see package [`seasonal`])
+#' @param outlier deals with outliers. `rm` for removing the outliers;
+#' `rpl` for replacing outliers with interpolated values.
+#' @param hp_filter applying (boosted) HP filter (see package [`bHP`])
 #' @param chg transform the output series.
 #' `log` for logarithmic transformation;
-#' `diff` for first-order difference;
+#' `d` for first-order difference;
 #' `ld` stands for log-difference;
 #' `pct` computes the percentage change from a period ago;
 #' `yoy` computes the percentage change from a year ago;
@@ -49,13 +55,14 @@ trans.ts = function(
     freq = c("asis", "y", "q", "m"),
     agg = c("avg", "sum", "last"),
     unit = 1,
-    disYTD = FALSE,
-    naFill = c("none", "interp", "locf", "ma", "kalman"),
-    naReg = numeric(0),
-    naYoY = numeric(0),
-    seasAdj = c("none", "x11", "x13"),
-    hpFilter = c("none", "trend", "cycle"),
-    chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm"),
+    YTD = FALSE,
+    na_impute = c("none", "interp", "locf", "ma", "kalman"),
+    na_predict = c("none", "yoy", "reg", "lnreg"),
+    xreg = NULL,
+    seas = c("none", "x11", "x13"),
+    hp_filter = c("none", "trend", "cycle"),
+    chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
+    outlier = c("asis", "rm", "rpl"),
     ...) {
 
   stopifnot(is.ts(x))
@@ -91,7 +98,7 @@ trans.ts = function(
   y = x
 
   # disaggregate YTD series
-  if (isTRUE(disYTD) && nfreq %in% c(4,12)) {
+  if (isTRUE(YTD) && nfreq %in% c(4,12)) {
     for (i in 1:length(x)) {
       if (cycle(x)[i] == 1)
         y[i] = ifelse(i==length(x), NA_real_, x[i])
@@ -105,33 +112,36 @@ trans.ts = function(
     }
   }
 
-  # impute missing values by regression
-  if (is.numeric(naReg) && length(naReg) > 0) {
-    if(NROW(naReg) != NROW(y)) {
-      stop("Regressors have different length.")
+  # predict missing values by regression
+  na_predict = match.arg(na_predict)
+  if (na_predict == "reg" || na_predict == "lnreg") {
+    if(NROW(xreg) != NROW(y))
+      stop("Regressors must not have different length")
+    if (na_predict == "lnreg") {
+      fit = lm(log(y) ~ log(xreg))
+      pred = exp(predict(fit, newdata = log(xreg)))
+    } else {
+      fit = lm(y ~ xreg)
+      pred = predict(fit, newdata = xreg)
     }
-    fit = predict(lm(y ~ naReg), newdata = naReg)
-    for (i in 1:length(y)) {
-      if (is.na(y[i])) y[i] = fit[i]
-    }
+    y[is.na(y)] <- pred[is.na(y)]
   }
 
-  # impute missing values by YoY growth rates
-  if (is.numeric(naYoY) && length(naYoY) > 0) {
-    if (length(naYoY) != length(y)) {
-      stop("YoY series has different length.")
-    }
+  # predict missing values by YoY growth rates
+  if (na_predict == "yoy") {
+    if (NROW(xreg) != NROW(y))
+      stop("YoY series must not has different length")
     # nfreq = frequency(y)
     # filling forward
     for (i in (nfreq + 1):length(y)) {
-      if (is.na(y[i]) && !is.na(y[i - nfreq]) && !is.na(naYoY[i])) {
-        y[i] = y[i - nfreq] * (1 + naYoY[i] / 100)
+      if (is.na(y[i]) && !is.na(y[i - nfreq]) && !is.na(xreg[i])) {
+        y[i] = y[i - nfreq] * (1 + xreg[i] / 100)
       }
     }
     # filling backward
     for (i in (length(y) - nfreq):1) {
-      if (is.na(x[y]) && !is.na(y[i + nfreq]) && !is.na(naYoY[i + nfreq])) {
-        y[i] = y[i + nfreq] / (1 + naYoY[i + nfreq] / 100)
+      if (is.na(x[y]) && !is.na(y[i + nfreq]) && !is.na(xreg[i + nfreq])) {
+        y[i] = y[i + nfreq] / (1 + xreg[i + nfreq] / 100)
       }
     }
   }
@@ -141,9 +151,9 @@ trans.ts = function(
   y = zoo::na.trim(y)
 
   # impute missing values
-  naFill = match.arg(naFill)
+  na_impute = match.arg(na_impute)
   y = switch(
-    naFill,
+    na_impute,
     "interp" = imputeTS::na_interpolation(y),
     "kalman" = imputeTS::na_kalman(y),
     "locf" = imputeTS::na_locf(y),
@@ -152,24 +162,25 @@ trans.ts = function(
   )
 
   # seasonal adjustment
-  seasAdj = match.arg(seasAdj)
-  if (seasAdj != "none") {
-    na_pos = is.na(y) # replace NA with outliers
-    tmp = replace(y, na_pos, 99999)
+  seas = match.arg(seas)
+  if (seas != "none") {
+    na_pos = is.na(y)
+    # replace NA with outliers otherwise seas would not run
+    tmp = replace(y, na_pos, 999999)
     # Chinese Lunar New Year regressors
     xreg = cbind(
       seasonal::genhol(seasonal::cny, start = -7, end = -1, center = "calendar"),
       seasonal::genhol(seasonal::cny, start = 0, end = 7, center = "calendar")
     )
     seasObj = seasonal::seas(tmp, xreg, regression.usertype = "holiday")
-    if (seasAdj == "x11") update(seasObj, x11 = "")
+    if (seas == "x11") update(seasObj, x11 = "")
     y = seasonal::final(seasObj) # seasonally adjusted series
     y[na_pos] <- NA
   }
 
   # boosted HP filtering
-  hpFilter = match.arg(hpFilter)
-  if (hpFilter != "none") {
+  hp_filter = match.arg(hp_filter)
+  if (hp_filter != "none") {
     lambda = switch (
       as.character(nfreq),
       "1" = 6.25,
@@ -177,7 +188,7 @@ trans.ts = function(
       "12" = 129600
     )
     bhp = bHP::BoostedHP(y, lambda)
-    y = switch (hpFilter, "trend" = bhp$trend, "cycle" = bhp$cycle)
+    y = switch (hp_filter, "trend" = bhp$trend, "cycle" = bhp$cycle)
   }
 
   # output transform
@@ -185,7 +196,7 @@ trans.ts = function(
   y = switch (chg,
     "asis" = y,
     "log" = log(y),
-    "diff" =diff(y),
+    "d" = diff(y),
     "ld" = diff(log(y)),
     "pct" = 100*(y/lag(y, -1)-1),
     "yoy" = 100*(y/lag(y, -nfreq)-1),
@@ -199,6 +210,15 @@ trans.ts = function(
     tmp = zoo::merge.zoo(y, x)
     y = as.ts(tmp[,1])
   }
+
+  # clean outliers if necessary
+  outlier = match.arg(outlier)
+  if (outlier == "rm") {
+    y = forecast::tsclean(y, replace.missing = F)
+  } else if (outlier == "rpl") {
+    y = forecast::tsclean(y, replace.missing = T)
+  }
+
   return(y)
 }
 

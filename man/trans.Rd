@@ -13,13 +13,14 @@ trans(x, ...)
   freq = c("asis", "y", "q", "m"),
   agg = c("avg", "sum", "last"),
   unit = 1,
-  disYTD = FALSE,
-  naFill = c("none", "interp", "locf", "ma", "kalman"),
-  naReg = numeric(0),
-  naYoY = numeric(0),
-  seasAdj = c("none", "x11", "x13"),
-  hpFilter = c("none", "trend", "cycle"),
-  chg = c("asis", "log", "diff", "ld", "pct", "yoy", "idx", "ttm"),
+  YTD = FALSE,
+  na_impute = c("none", "interp", "locf", "ma", "kalman"),
+  na_predict = c("none", "yoy", "reg", "lnreg"),
+  xreg = NULL,
+  seas = c("none", "x11", "x13"),
+  hp_filter = c("none", "trend", "cycle"),
+  chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
+  outlier = c("asis", "rm", "rpl"),
   ...
 )
 
@@ -38,29 +39,36 @@ to higher frequencies will generate NAs in the output series.}
 
 \item{unit}{a single number to scale up or down the values.}
 
-\item{disYTD}{set to \code{TRUE} for YTD series to convert it back to monthly
+\item{YTD}{set to \code{TRUE} for YTD series to convert it back to monthly
 or quarterly level series.}
 
-\item{naFill}{methods to impute missing values (see package \code{\link{imputeTS}})}
+\item{na_impute}{methods to impute missing values (see package \code{\link{imputeTS}})}
 
-\item{naReg}{impute missing values by a set of regressors. Can be a vector
-or a matrix. Must be the same length as the input time series.}
+\item{na_predict}{predicts missing values by regression.
+\code{yoy} predicts missing levels by YoY growth rates;
+\code{reg} predicts missing values by linear regression;
+\code{lnreg} runs linear regression on log levels.}
 
-\item{naYoY}{impute missing values by YoY growth rates. Must be a vector
-(in percentage) with the same length as the input time series.}
+\item{xreg}{regressors to predict missing values. Can be a vector
+or a matrix. Must be the same length as the input time series.
+If \code{na_predict} is specified as \code{yoy}, must be a vector of growth rates
+in percentage.}
 
-\item{seasAdj}{seasonal adjusting methods (see package \code{\link{seasonal}})}
+\item{seas}{seasonal adjusting methods (see package \code{\link{seasonal}})}
 
-\item{hpFilter}{applying (boosted) HP filter (see package \code{\link{bHP}})}
+\item{hp_filter}{applying (boosted) HP filter (see package \code{\link{bHP}})}
 
 \item{chg}{transform the output series.
 \code{log} for logarithmic transformation;
-\code{diff} for first-order difference;
+\code{d} for first-order difference;
 \code{ld} stands for log-difference;
 \code{pct} computes the percentage change from a period ago;
 \code{yoy} computes the percentage change from a year ago;
 \code{idx} indexify the time series with the first non-NA observation set to 1;
 \code{ttm} computes the rolling sum of past 1 year.}
+
+\item{outlier}{deals with outliers. \code{rm} for removing the outliers;
+\code{rpl} for replacing outliers with interpolated values.}
 
 \item{colNames}{rename the columns. Must be the same length as the number
 of columns of the input series.}
