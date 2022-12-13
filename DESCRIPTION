@@ -1,6 +1,6 @@
 Package: csutil
 Title: Utility Functions for China Macro Time Series
-Version: 0.0.2
+Version: 0.0.3
 Author: zemw <zemw123@gmail.com>
 Maintainer: zemw <zemw123@gmail.com>
 Description: A collection of utility function to work with China's macro time series.

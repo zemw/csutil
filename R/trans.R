@@ -20,8 +20,14 @@ trans = function(x, ...) {
 #' to higher frequencies will generate NAs in the output series.
 #' @param agg aggregating method for frequency transformation.
 #' @param unit a single number to scale up or down the values.
-#' @param YTD set to `TRUE` for YTD series to convert it back to monthly
-#' or quarterly level series.
+#' @param YTD methods to disaggregate YTD series into monthly or quarterly
+#' series. `d` for consecutive differencing within a year. Due to the Lunar
+#' New Year (LNY) effect. NBS usually reports January and February observations
+#' together (as the sum of the two month). This results in duplicated or
+#' missing values for the first two months and distorts the normal time series.
+#' Specify `rm` to remote the values for the first two months; `split` to split
+#' the sum and accredit the values to Jan and Feb according to the LNY holiday
+#' patterns; `avg` to split the sum equally to each month.
 #' @param na_impute methods to impute missing values (see package [`imputeTS`])
 #' @param na_predict predicts missing values by regression.
 #' `yoy` predicts missing levels by YoY growth rates;
@@ -55,7 +61,7 @@ trans.ts = function(
     freq = c("asis", "y", "q", "m"),
     agg = c("avg", "sum", "last"),
     unit = 1,
-    YTD = FALSE,
+    YTD = c("none", "d", "rm", "split", "avg"),
     na_impute = c("none", "interp", "locf", "ma", "kalman"),
     na_predict = c("none", "yoy", "reg", "lnreg"),
     xreg = NULL,
@@ -97,18 +103,50 @@ trans.ts = function(
   # output series
   y = x
 
-  # disaggregate YTD series
-  if (isTRUE(YTD) && nfreq %in% c(4,12)) {
+  # disaggregate YTD series if required
+  transYTD = match.arg(YTD)
+  if (transYTD != "none" && (nfreq %in% c(4,12))) {
+    # take difference within each year
     for (i in 1:length(x)) {
-      if (cycle(x)[i] == 1)
-        y[i] = ifelse(i==length(x), NA_real_, x[i])
-      # avoid possible double counting in Jan/Feb
-      else if (cycle(x)[i] == 2 && i > 1 && identical(x[i], x[i-1]))
-        y[(i-1):i] = NA_real_
-      else if (i > 1)
-        y[i] = x[i] - x[i - 1]
-      else
-        y[i] = NA_real_
+      if (cycle(x)[i] == 1) y[i] = x[i]
+      else if (i > 1) y[i] = x[i] - x[i-1]
+      else y[i] = NA_real_
+    }
+    # fix the distortion caused by Lunar New Year
+    if (transYTD == "rm" && nfreq == 12) {
+      # simply remove Jan / Feb observations
+      isJanFeb = cycle(x) == 1 | cycle(x) == 2
+      y[isJanFeb] = NA_real_
+    }
+    # The YTD value for Feb is the sum of Jan and Feb
+    # split the sum by half and half as the values for
+    # Jan and Feb respectively
+    if (transYTD == "avg" && nfreq == 12) {
+      for (i in 1:length(x)) {
+        if (cycle(x)[i] == 2) {
+          y[i] = x[i] / 2
+          if (i > 1)
+            y[i-1] = x[i] / 2
+        }
+      }
+    }
+    # split the sum according to holiday patterns
+    if (transYTD == "split" && nfreq == 12) {
+      # lunar new year regressor
+      lny = seasonal::genhol(seasonal::cny, -7, 7, nfreq, "calendar")
+      lny = window(lny, start(x), end(x))
+      for (i in 1:length(x)) {
+        if (cycle(x)[i] == 2) {
+          # this formula is based on the regression of other series
+          # on the impact of lunar new year
+          # the more severe the impact on Feb, the less the proportion
+          # of value accredited to Feb as opposed to Jan
+          s = pnorm(.0556 - 0.206 * lny[i])
+          y[i] = x[i] * s
+          if (i > 1)
+            y[i-1] = x[i] * (1-s)
+        }
+      }
     }
   }
 
@@ -227,12 +265,12 @@ trans.ts = function(
 #' For multiple time series input, the same transformation will be applied
 #' for each series.
 #'
-#' @param colNames rename the columns. Must be the same length as the number
+#' @param col_names rename the columns. Must be the same length as the number
 #' of columns of the input series.
 #'
 #' @rdname trans
 #' @export
-trans.mts = function(x, ..., colNames = NULL) {
+trans.mts = function(x, ..., col_names = NULL) {
   stopifnot(is.mts(x))
   . = NULL # silence CMD Check
   y = as.list(x) %>%
@@ -240,6 +278,6 @@ trans.mts = function(x, ..., colNames = NULL) {
       do.call(trans.ts, args = list(x = .x, ...))
     }) %>%
     do.call(cbind, args = .)
-  if (!is.null(colNames)) colnames(y) = colNames
+  if (!is.null(col_names)) colnames(y) = col_names
   return(y)
 }

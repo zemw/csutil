@@ -13,7 +13,7 @@ trans(x, ...)
   freq = c("asis", "y", "q", "m"),
   agg = c("avg", "sum", "last"),
   unit = 1,
-  YTD = FALSE,
+  YTD = c("none", "d", "rm", "split", "avg"),
   na_impute = c("none", "interp", "locf", "ma", "kalman"),
   na_predict = c("none", "yoy", "reg", "lnreg"),
   xreg = NULL,
@@ -24,7 +24,7 @@ trans(x, ...)
   ...
 )
 
-\method{trans}{mts}(x, ..., colNames = NULL)
+\method{trans}{mts}(x, ..., col_names = NULL)
 }
 \arguments{
 \item{x}{time series object}
@@ -39,8 +39,14 @@ to higher frequencies will generate NAs in the output series.}
 
 \item{unit}{a single number to scale up or down the values.}
 
-\item{YTD}{set to \code{TRUE} for YTD series to convert it back to monthly
-or quarterly level series.}
+\item{YTD}{methods to disaggregate YTD series into monthly or quarterly
+series. \code{d} for consecutive differencing within a year. Due to the Lunar
+New Year (LNY) effect. NBS usually reports January and February observations
+together (as the sum of the two month). This results in duplicated or
+missing values for the first two months and distorts the normal time series.
+Specify \code{rm} to remote the values for the first two months; \code{split} to split
+the sum and accredit the values to Jan and Feb according to the LNY holiday
+patterns; \code{avg} to split the sum equally to each month.}
 
 \item{na_impute}{methods to impute missing values (see package \code{\link{imputeTS}})}
 
@@ -70,7 +76,7 @@ in percentage.}
 \item{outlier}{deals with outliers. \code{rm} for removing the outliers;
 \code{rpl} for replacing outliers with interpolated values.}
 
-\item{colNames}{rename the columns. Must be the same length as the number
+\item{col_names}{rename the columns. Must be the same length as the number
 of columns of the input series.}
 }
 \value{
