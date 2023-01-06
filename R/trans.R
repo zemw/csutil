@@ -178,7 +178,7 @@ trans.ts = function(
     }
     # filling backward
     for (i in (length(y) - nfreq):1) {
-      if (is.na(x[y]) && !is.na(y[i + nfreq]) && !is.na(xreg[i + nfreq])) {
+      if (is.na(x[i]) && !is.na(y[i + nfreq]) && !is.na(xreg[i + nfreq])) {
         y[i] = y[i + nfreq] / (1 + xreg[i + nfreq] / 100)
       }
     }
@@ -205,12 +205,16 @@ trans.ts = function(
     na_pos = is.na(y)
     # replace NA with outliers otherwise seas would not run
     tmp = replace(y, na_pos, 999999)
-    # Chinese Lunar New Year regressors
-    xreg = cbind(
-      seasonal::genhol(seasonal::cny, start = -7, end = -1, center = "calendar"),
-      seasonal::genhol(seasonal::cny, start = 0, end = 7, center = "calendar")
-    )
-    seasObj = seasonal::seas(tmp, xreg, regression.usertype = "holiday")
+    if (nfreq == 12) {
+      # Chinese Lunar New Year regressors monthly
+      xreg = cbind(
+        seasonal::genhol(seasonal::cny, start = -7, end = -1, center = "calendar"),
+        seasonal::genhol(seasonal::cny, start = 0, end = 7, center = "calendar")
+      )
+      seasObj = seasonal::seas(tmp, xreg, regression.usertype = "holiday")
+    } else {
+      seasObj = seasonal::seas(tmp)
+    }
     if (seas == "x11") update(seasObj, x11 = "")
     y = seasonal::final(seasObj) # seasonally adjusted series
     y[na_pos] <- NA
