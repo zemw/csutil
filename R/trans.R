@@ -55,6 +55,7 @@ trans = function(x, ...) {
 #'
 #' @import stats
 #' @rdname trans
+#' @export trans.ts
 #' @export
 trans.ts = function(
     x,
@@ -271,6 +272,7 @@ trans.ts = function(
 #' of columns of the input series.
 #'
 #' @rdname trans
+#' @export trans.mts
 #' @export
 trans.mts = function(x, ..., col_names = NULL) {
   . = NULL # silence CMD Check
