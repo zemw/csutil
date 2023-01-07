@@ -80,7 +80,7 @@ in percentage.}
 of columns of the input series.}
 }
 \value{
-the transformed series. Output series are returned in the same
+Transformed series. Output series are returned in the same
 length as the input series if no frequency change applied.
 }
 \description{

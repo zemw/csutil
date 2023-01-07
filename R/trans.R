@@ -50,7 +50,7 @@ trans = function(x, ...) {
 #' `idx` indexify the time series with the first non-NA observation set to 1;
 #' `ttm` computes the rolling sum of past 1 year.
 #'
-#' @return the transformed series. Output series are returned in the same
+#' @return Transformed series. Output series are returned in the same
 #' length as the input series if no frequency change applied.
 #'
 #' @import stats
@@ -70,8 +70,6 @@ trans.ts = function(
     chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
     outlier = c("asis", "rm", "rpl"),
     ...) {
-
-  stopifnot(is.ts(x))
 
   # unit multiplier
   if(rlang::is_scalar_double(unit)) {
@@ -275,7 +273,6 @@ trans.ts = function(
 #' @rdname trans
 #' @export
 trans.mts = function(x, ..., col_names = NULL) {
-  stopifnot(is.mts(x))
   . = NULL # silence CMD Check
   y = as.list(x) %>%
     purrr::map(function(.x) {

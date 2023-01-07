@@ -10,9 +10,6 @@
 #' @return nil
 #' @export
 dualplot = function(y1, y2, ...) {
-
-  stopifnot(stats::is.ts(y1) && stats::is.ts(y2))
-
   x1 = as.numeric(time(y1))
   x2 = as.numeric(time(y2))
   y1 = as.numeric(y1)
@@ -34,6 +31,5 @@ dualplot = function(y1, y2, ...) {
 #' @seealso [zoo::plot.zoo]
 #' @export
 multiplot = function(y, ...) {
-  stopifnot(is.mts(y))
   plot.zoo(y, ...)
 }

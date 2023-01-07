@@ -4,7 +4,7 @@
 \name{csutil-package}
 \alias{csutil}
 \alias{csutil-package}
-\title{csutil: Utility Functions for China Macro Time Series}
+\title{csutil: Utility Functions for Macroeconomic Time Series}
 \description{
 A collection of utility function to work with China's macro time series.
 }
