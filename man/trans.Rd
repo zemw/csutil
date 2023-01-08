@@ -4,6 +4,7 @@
 \alias{trans}
 \alias{trans.ts}
 \alias{trans.mts}
+\alias{trans.zoo}
 \title{Time Series Transformation}
 \usage{
 trans(x, ...)
@@ -25,6 +26,8 @@ trans(x, ...)
 )
 
 \method{trans}{mts}(x, ..., col_names = NULL)
+
+\method{trans}{zoo}(x, ...)
 }
 \arguments{
 \item{x}{time series object}

@@ -55,7 +55,6 @@ trans = function(x, ...) {
 #'
 #' @import stats
 #' @rdname trans
-#' @export trans.ts
 #' @export
 trans.ts = function(
     x,
@@ -272,7 +271,6 @@ trans.ts = function(
 #' of columns of the input series.
 #'
 #' @rdname trans
-#' @export trans.mts
 #' @export
 trans.mts = function(x, ..., col_names = NULL) {
   . = NULL # silence CMD Check
@@ -283,4 +281,10 @@ trans.mts = function(x, ..., col_names = NULL) {
     do.call(cbind, args = .)
   if (!is.null(col_names)) colnames(y) = col_names
   return(y)
+}
+
+#' @rdname trans
+#' @export
+trans.zoo = function(x,...) {
+  trans(as.ts(x), ...)
 }
