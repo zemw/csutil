@@ -12,13 +12,14 @@ trans(x, ...)
 \method{trans}{ts}(
   x,
   freq = c("asis", "y", "q", "m"),
-  agg = c("avg", "sum", "last"),
+  agg = c("avg", "sum", "first", "last"),
+  disagg = c("sum", "mean", "first", "last"),
   unit = 1,
   YTD = c("none", "d", "rm", "split", "avg"),
   na_impute = c("none", "interp", "locf", "ma", "kalman"),
   na_predict = c("none", "yoy", "reg", "lnreg"),
   xreg = NULL,
-  seas = c("none", "x11", "x13"),
+  seas = c("none", "x11", "x13", "x11a", "x13a"),
   hp_filter = c("none", "trend", "cycle"),
   chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
   outlier = c("asis", "rm", "rpl"),
@@ -38,7 +39,10 @@ trans(x, ...)
 lower than the original one, aggregating method will apply. Transforming
 to higher frequencies will generate NAs in the output series.}
 
-\item{agg}{aggregating method for frequency transformation.}
+\item{agg}{methods to aggregate time series to lower frequency.}
+
+\item{disagg}{methods to disaggregate time series to higher frequency
+(see \code{\link{tempdisagg}}).}
 
 \item{unit}{a single number to scale up or down the values.}
 
@@ -63,7 +67,9 @@ or a matrix. Must be the same length as the input time series.
 If \code{na_predict} is specified as \code{yoy}, must be a vector of growth rates
 in percentage.}
 
-\item{seas}{seasonal adjusting methods (see package \code{\link{seasonal}})}
+\item{seas}{seasonal adjusting methods (see package \code{\link{seasonal}}).
+\code{x11a} and \code{x13a} include additional regressors to adjust for lunar
+new year holiday.}
 
 \item{hp_filter}{applying (boosted) HP filter (see package \code{\link{bHP}})}
 

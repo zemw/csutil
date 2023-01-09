@@ -1,6 +1,6 @@
 Package: csutil
 Title: Utility Functions for Macroeconomic Time Series
-Version: 0.0.5
+Version: 0.0.7
 Author: zemw <zemw123@gmail.com>
 Maintainer: zemw <zemw123@gmail.com>
 Description: A collection of utility function to work with China's macro time series.
@@ -25,6 +25,7 @@ Imports:
     slider,
     stats,
     stringr,
+    tempdisagg,
     tibble,
     tidyr,
     utils,

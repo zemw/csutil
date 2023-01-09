@@ -18,7 +18,9 @@ trans = function(x, ...) {
 #' @param freq frequency of the output series. If the intended frequency is
 #' lower than the original one, aggregating method will apply. Transforming
 #' to higher frequencies will generate NAs in the output series.
-#' @param agg aggregating method for frequency transformation.
+#' @param agg methods to aggregate time series to lower frequency.
+#' @param disagg methods to disaggregate time series to higher frequency
+#' (see [`tempdisagg`]).
 #' @param unit a single number to scale up or down the values.
 #' @param YTD methods to disaggregate YTD series into monthly or quarterly
 #' series. `d` for consecutive differencing within a year. Due to the Lunar
@@ -37,7 +39,9 @@ trans = function(x, ...) {
 #' or a matrix. Must be the same length as the input time series.
 #' If `na_predict` is specified as `yoy`, must be a vector of growth rates
 #' in percentage.
-#' @param seas seasonal adjusting methods (see package [`seasonal`])
+#' @param seas seasonal adjusting methods (see package [`seasonal`]).
+#' `x11a` and `x13a` include additional regressors to adjust for lunar
+#' new year holiday.
 #' @param outlier deals with outliers. `rm` for removing the outliers;
 #' `rpl` for replacing outliers with interpolated values.
 #' @param hp_filter applying (boosted) HP filter (see package [`bHP`])
@@ -59,17 +63,20 @@ trans = function(x, ...) {
 trans.ts = function(
     x,
     freq = c("asis", "y", "q", "m"),
-    agg = c("avg", "sum", "last"),
+    agg = c("avg", "sum", "first", "last"),
+    disagg = c("sum", "mean", "first", "last"),
     unit = 1,
     YTD = c("none", "d", "rm", "split", "avg"),
     na_impute = c("none", "interp", "locf", "ma", "kalman"),
     na_predict = c("none", "yoy", "reg", "lnreg"),
     xreg = NULL,
-    seas = c("none", "x11", "x13"),
+    seas = c("none", "x11", "x13", "x11a", "x13a"),
     hp_filter = c("none", "trend", "cycle"),
     chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
     outlier = c("asis", "rm", "rpl"),
     ...) {
+
+  origx = x
 
   # unit multiplier
   if(rlang::is_scalar_double(unit)) {
@@ -80,18 +87,18 @@ trans.ts = function(
   freq = match.arg(freq)
   nfreq = switch (freq, "y" = 1, "q" = 4, "m" = 12, frequency(x))
   if (nfreq > frequency(x)) {
-    # stop("Cannot aggregate to higher frequency.")
-    tmp = ts(NA, start = time(x)[1], end = time(x)[length(x)], nfreq)
-    suppressWarnings(tmp <- zoo::merge.zoo(tmp, x))
-    x = as.ts(tmp[,2])
+    # 'denton-cholette' removes the transient movement at the beginning of series
+    suppressMessages(td <- tempdisagg::td(x ~ 1, match.arg(disagg), nfreq, "denton"))
+    x = predict(td)
   }
-  if (nfreq < frequency(x)) {
+  else if (nfreq < frequency(x)) {
     agg = match.arg(agg)
     fun = function(.x, method = agg) {
       switch (
         method,
         "avg" = mean(.x),
         "sum" = sum(.x),
+        "first" = utils::head(.x, n = 1),
         "last" = utils::tail(.x, n = 1)
       )
     }
@@ -203,19 +210,23 @@ trans.ts = function(
     na_pos = is.na(y)
     # replace NA with outliers otherwise seas would not run
     tmp = replace(y, na_pos, 999999)
-    if (nfreq == 12) {
+    args = list(x=tmp)
+    if (seas %in% c("x11a", "x13a") && nfreq == 12) {
       # Chinese Lunar New Year regressors monthly
       xreg = cbind(
         seasonal::genhol(seasonal::cny, start = -7, end = -1, center = "calendar"),
         seasonal::genhol(seasonal::cny, start = 0, end = 7, center = "calendar")
       )
-      seasObj = seasonal::seas(tmp, xreg, regression.usertype = "holiday")
-    } else {
-      seasObj = seasonal::seas(tmp)
+      args$xreg = xreg
+      args$regression.usertype = "holiday"
     }
-    if (seas == "x11") update(seasObj, x11 = "")
+    if (seas %in% c("x11", "x11a")) {
+      args$x11 = ""
+    }
+    # suppress message: Model used in SEATS is different
+    suppressMessages(seasObj <- do.call(seasonal::seas, args))
     y = seasonal::final(seasObj) # seasonally adjusted series
-    y[na_pos] <- NA
+    y[na_pos] = NA  # put NA back
   }
 
   # boosted HP filtering
