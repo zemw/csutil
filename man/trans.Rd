@@ -19,7 +19,7 @@ trans(x, ...)
   na_impute = c("none", "interp", "locf", "ma", "kalman"),
   na_predict = c("none", "yoy", "reg", "lnreg"),
   xreg = NULL,
-  seas = c("none", "x11", "x13", "x11a", "x13a"),
+  seas = c("none", "x11", "x13", "x11a", "x13a", "stl"),
   hp_filter = c("none", "trend", "cycle"),
   chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
   outlier = c("asis", "rm", "rpl"),

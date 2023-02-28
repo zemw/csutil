@@ -70,7 +70,7 @@ trans.ts = function(
     na_impute = c("none", "interp", "locf", "ma", "kalman"),
     na_predict = c("none", "yoy", "reg", "lnreg"),
     xreg = NULL,
-    seas = c("none", "x11", "x13", "x11a", "x13a"),
+    seas = c("none", "x11", "x13", "x11a", "x13a", "stl"),
     hp_filter = c("none", "trend", "cycle"),
     chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
     outlier = c("asis", "rm", "rpl"),
@@ -206,7 +206,9 @@ trans.ts = function(
 
   # seasonal adjustment
   seas = match.arg(seas)
-  if (seas != "none") {
+  if (seas == "stl") {
+    y = stlseas(y)
+  } else if (seas != "none") {
     na_pos = is.na(y)
     # replace NA with outliers otherwise seas would not run
     tmp = replace(y, na_pos, 999999)
