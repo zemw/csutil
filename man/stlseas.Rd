@@ -4,15 +4,19 @@
 \alias{stlseas}
 \title{Seasonal Adjustment with STL}
 \usage{
-stlseas(x, ...)
+stlseas(x, ..., plot = FALSE)
 }
 \arguments{
-\item{x}{univariate time series to be adjusted}
+\item{x}{a univariate time series to be adjusted}
 
 \item{...}{arguments to be passed to \link[stats:stl]{stats::stl}}
+
+\item{plot}{weather a visualization of the the trend-cycle
+decomposition will be returned}
 }
 \value{
-the seasonally-adjusted series.
+If \code{plot} is set to \code{TRUE}, a \code{ggplot} object will be returned;
+otherwise, the seasonally-adjusted series.
 }
 \description{
 Seasonal Adjustment with STL

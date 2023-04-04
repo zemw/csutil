@@ -37,7 +37,6 @@ color.axis<-function(side=1,at=NULL,labels=TRUE,axlab=NA,axlab.at=NA,
 #' Fix the left-axis label issue.
 #' https://github.com/plotrix/plotrix/blob/master/R/twoord.plot.R
 #' @import graphics
-#' @import stats
 #' @noRd
 twoord.plot<-function(lx,ly,rx,ry,data=NULL,main="",xlim=NULL,lylim=NULL,
                       rylim=NULL,mar=c(5,4,4,4),lcol=1,rcol=2,xlab="",
@@ -175,7 +174,6 @@ make.par.list <- function(nams, x, n, m, def, recycle = sum(unnamed) > 0) {
 #' Imported from zoo
 #' https://github.com/cran/zoo/blob/master/R/plot.zoo.R
 #' Original function ignores cex.lab. Fixed by adding cex in mtext.
-#' @importFrom zoo index coredata index2char merge.zoo
 #' @importFrom grDevices xy.coords
 #' @noRd
 plot.zoo <- function(x, y = NULL, screens, plot.type, panel = lines,

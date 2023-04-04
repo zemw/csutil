@@ -27,7 +27,7 @@ the Lunar New Year effect, and seasonally adjust the data.
 REInv |> csutil::trans(YTD = "split", seas = "x11a") 
 ```
 
-![](./DEMO.png)
+![](./inst/images/DEMO.png)
 
 ## Disclaimer
 

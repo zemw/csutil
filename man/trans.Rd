@@ -11,18 +11,19 @@ trans(x, ...)
 
 \method{trans}{ts}(
   x,
-  freq = c("asis", "y", "q", "m"),
-  agg = c("avg", "sum", "first", "last"),
-  disagg = c("sum", "mean", "first", "last"),
-  unit = 1,
-  YTD = c("none", "d", "rm", "split", "avg"),
-  na_impute = c("none", "interp", "locf", "ma", "kalman"),
-  na_predict = c("none", "yoy", "reg", "lnreg"),
+  freq = frequency(x),
+  agg = c("mean", "sum", "first", "last"),
+  disagg = c("mean", "sum", "first", "last"),
+  multiplier = 1,
+  ytd = c("default", "diff", "diff_split"),
+  na_impute = c("default", "interp", "locf", "ma", "kalman"),
+  na_predict = c("default", "reg", "lnreg", "yoy"),
   xreg = NULL,
-  seas = c("none", "x11", "x13", "x11a", "x13a", "stl"),
-  hp_filter = c("none", "trend", "cycle"),
-  chg = c("asis", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
-  outlier = c("asis", "rm", "rpl"),
+  seas = c("default", "x11", "seats", "stl"),
+  seas_cny = c(-7, 7),
+  chg = c("default", "log", "d", "ld", "pct", "yoy", "idx", "ttm"),
+  outlier = c("default", "rm", "rp"),
+  na_pad = FALSE,
   ...
 )
 
@@ -44,36 +45,33 @@ to higher frequencies will generate NAs in the output series.}
 \item{disagg}{methods to disaggregate time series to higher frequency
 (see \code{\link{tempdisagg}}).}
 
-\item{unit}{a single number to scale up or down the values.}
+\item{multiplier}{a single number to scale up or down the values.}
 
-\item{YTD}{methods to disaggregate YTD series into monthly or quarterly
-series. \code{d} for consecutive differencing within a year. Due to the Lunar
-New Year (LNY) effect. NBS usually reports January and February observations
-together (as the sum of the two month). This results in duplicated or
-missing values for the first two months and distorts the normal time series.
-Specify \code{rm} to remote the values for the first two months; \code{split} to split
-the sum and accredit the values to Jan and Feb according to the LNY holiday
-patterns; \code{avg} to split the sum equally to each month.}
+\item{ytd}{methods to disaggregate YTD series into monthly or quarterly
+series. \code{diff} for differencing within a year. Due to the Lunar New Year
+(LNY) effect. NBS usually reports January and February observations
+together (as the sum of the two month). Specify \code{diff_split} to split
+the sum and accredit the values to Jan and Feb evenly.}
 
 \item{na_impute}{methods to impute missing values (see package \code{\link{imputeTS}})}
 
-\item{na_predict}{predicts missing values by regression.
-\code{yoy} predicts missing levels by YoY growth rates;
+\item{na_predict}{predicts missing values in the series.
 \code{reg} predicts missing values by linear regression;
-\code{lnreg} runs linear regression on log levels.}
+\code{lnreg} runs linear regression on log levels;
+\code{yoy} deducts missing levels by year-over-year growth rates.}
 
 \item{xreg}{regressors to predict missing values. Can be a vector
 or a matrix. Must be the same length as the input time series.
-If \code{na_predict} is specified as \code{yoy}, must be a vector of growth rates
+If \code{na_predict} is set to \code{yoy}, must be a vector of growth rates
 in percentage.}
 
-\item{seas}{seasonal adjusting methods (see package \code{\link{seasonal}}).
-\code{x11a} and \code{x13a} include additional regressors to adjust for lunar
-new year holiday.}
+\item{seas}{seasonal adjusting methods (see package \code{\link{seasonal}}).}
 
-\item{hp_filter}{applying (boosted) HP filter (see package \code{\link{bHP}})}
+\item{seas_cny}{adjusting Chinese New Year effect in seasonal adjustment.
+Must be a pair of integers indicating the start and end point of the holiday
+around the New Year's Day. Set to \code{NULL} to ignore the holiday effect.}
 
-\item{chg}{transform the output series.
+\item{chg}{final transformation for the output series.
 \code{log} for logarithmic transformation;
 \code{d} for first-order difference;
 \code{ld} stands for log-difference;
@@ -83,14 +81,17 @@ new year holiday.}
 \code{ttm} computes the rolling sum of past 1 year.}
 
 \item{outlier}{deals with outliers. \code{rm} for removing the outliers;
-\code{rpl} for replacing outliers with interpolated values.}
+\code{rp} for replacing outliers with interpolated values.}
+
+\item{na_pad}{whether the output series will be padded with \code{NA} to
+ensure it has the same length as the input series.}
 
 \item{col_names}{rename the columns. Must be the same length as the number
 of columns of the input series.}
 }
 \value{
-Transformed series. Output series are returned in the same
-length as the input series if no frequency change applied.
+Transformed series. Output series may or may not be in the same
+length as the input series.
 }
 \description{
 Performs time series transformation including aggregation, missing-value
