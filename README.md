@@ -24,7 +24,7 @@ The package provides a one-stop function to split the YTD series, take care of
 the Lunar New Year effect, and seasonally adjust the data. 
 
 ```r
-REInv |> csutil::trans(YTD = "split", seas = "x11a") 
+REInv |> csutil::trans(ytd = "diff_split", seas = "x11", seas_cny = c(-7,7)) 
 ```
 
 ![](./inst/images/DEMO.png)
