@@ -148,10 +148,17 @@ yearapply = function(x, FUN) {
 #' @export
 ytddiff = function(x, split = c("default", "avg")) {
   stopifnot(frequency(x) %in% c(4,12))
-  y = yearapply(x, function(.x) diff(.x, na.pad=T))
+  y = as.ts(x)
+  for (i in 1:length(x)) {
+    if (cycle(x)[i] == 1) y[i] = x[i]
+    else if (i > 1) y[i] = x[i] - x[i-1]
+    else y[i] = NA_real_
+  }
   if (match.arg(split) == "avg" && frequency(x) == 12) {
-    y[cycle(y)==1] = y[cycle(y)==2] = x[cycle(x)==2]/2
-  } else y[cycle(y)==1] = x[cycle(x)==1]
+    for (i in 1:length(x))
+      if (cycle(x)[i] == 2) {
+        y[i] = x[i] / 2; if (i > 1) y[i-1] = x[i] / 2 }
+  }
   return(y)
 }
 
